@@ -1,5 +1,6 @@
 library(tidyverse)
 library(ggplot2)
+library(ggpubr)
 
 
 setwd("~/student_documents/UBC/Research/Chaoborus crush depth")
@@ -58,7 +59,8 @@ crush_raw <- crush_raw %>%
                           head_cap_len > 0 &
                             head_cap_len < 0.5 &
                             species == "punctipenis",
-                          2))
+                          2)) %>%
+  mutate(species = as_factor(species))
 
 print(crush_raw)
 
@@ -127,21 +129,42 @@ print(crush_raw.long)
 
 # for plotting using area
 area.df <- crush_raw.long %>%
-  filter(dimension == "area")
+  filter(dimension == "area") %>%
+  group_by(species)
 print(area.df)
 
 # for plotting using diameter
 diameter.df <- crush_raw.long %>%
-  filter(dimension == "diameter")
+  filter(dimension == "diameter") %>%
+  group_by(species)
 print(diameter.df)
 
+# plot with reg lines by species
 ggplot(data = diameter.df,
        aes(x = value, 
-           y = atm, 
-           colour = species)) +
-  geom_point()
+           y = atm,
+           colour = species, group = species)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = T) +
+  stat_regline_equation(label.x.npc = 0, 
+                        label.y.npc = 1, 
+                        aes(label = ..eq.label..)) +
+  theme_classic()
 
 
+# with no regard to species
+diameter.model <- lm(atm ~ value, data = diameter.df)
+
+summary(diameter.model)
+plot(diameter.model)
+coef(diameter.model)
+
+# species separated apriori: now can add other explanatory attributes (ant.post, instar etc.)
+z <- lm(atm ~ value, data = subset(diameter.df, species == 'trivittatus'))
+
+summary(z)
+plot(z)
+coef(z)
 
 
 
